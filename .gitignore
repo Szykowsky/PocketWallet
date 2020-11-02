@@ -11,7 +11,7 @@ nupkg/
 # Rider
 .idea
 
-.vs
+.vs/
 PocketWallet-Front/
 # User-specific files
 *.suo
