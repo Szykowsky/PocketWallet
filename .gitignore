@@ -12,9 +12,7 @@ nupkg/
 .idea
 
 .vs
-
 PocketWallet-Front/
-
 # User-specific files
 *.suo
 *.user
