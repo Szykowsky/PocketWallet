@@ -31,12 +31,8 @@ namespace PocketWallet.UnitTests.Services
         {
             //Arrange
             var users = GetFakeUsers();
-
-            var usersMock = DbContextMock.CreateDbSetMock(users);
-            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
-            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
 
             var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
 
@@ -55,12 +51,8 @@ namespace PocketWallet.UnitTests.Services
         {
             //Arrange
             var users = GetFakeUsers();
-
-            var usersMock = DbContextMock.CreateDbSetMock(users);
-            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
-            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
 
             var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
             var registerModel = GetFakeRegisterModel(UserNotExistLogin);
@@ -79,12 +71,8 @@ namespace PocketWallet.UnitTests.Services
         {
             //Arrange
             var users = GetFakeUsers();
-
-            var usersMock = DbContextMock.CreateDbSetMock(users);
-            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
-            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
 
             var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
 
@@ -103,13 +91,8 @@ namespace PocketWallet.UnitTests.Services
         {
             //Arrange
             var users = GetFakeUsers();
-
-            var usersMock = DbContextMock.CreateDbSetMock(users);
-            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
-            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
-            memoryCacheMock.Setup(x => x.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
 
             var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
             var loginModel = GetFakeLoginModel();
@@ -127,13 +110,8 @@ namespace PocketWallet.UnitTests.Services
         {
             //Arrange
             var users = GetFakeUsers();
-
-            var usersMock = DbContextMock.CreateDbSetMock(users);
-            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
-            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
-            memoryCacheMock.Setup(x => x.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
 
             var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
             var loginModel = GetFakeLoginModel(UserExistLogin, "BadPassword");
@@ -144,6 +122,63 @@ namespace PocketWallet.UnitTests.Services
 
             //Assert
             Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task ChangePassword_UserNotExist()
+        {
+            //Arrange
+            var users = GetFakeUsers();
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
+
+            var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
+            var changePasswordModel = GetFakeChangePasswordModel(UserNotExistLogin);
+            var cancellationToken = new CancellationToken();
+
+            //Act
+            var result = await service.ChangePassword(changePasswordModel, cancellationToken);
+
+            //Assert
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task ChangePassword_BadOldPassword()
+        {
+            //Arrange
+            var users = GetFakeUsers();
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
+
+            var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
+            var changePasswordModel = GetFakeChangePasswordModel(UserExistLogin, "BadOldPassword");
+            var cancellationToken = new CancellationToken();
+
+            //Act
+            var result = await service.ChangePassword(changePasswordModel, cancellationToken);
+
+            //Assert
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task ChangePassword_Succesfull()
+        {
+            //Arrange
+            var users = GetFakeUsers();
+            var dbContextMock = GetMockDbContext(users);
+            var memoryCacheMock = GetMockmemoryCache();
+
+            var service = new AuthService(dbContextMock.Object, memoryCacheMock.Object);
+            var changePasswordModel = GetFakeChangePasswordModel();
+            var cancellationToken = new CancellationToken();
+
+            //Act
+            var result = await service.ChangePassword(changePasswordModel, cancellationToken);
+
+            //Assert
+            Assert.True(result.Success);
         }
 
         private IQueryable<User> GetFakeUsers()
@@ -176,6 +211,34 @@ namespace PocketWallet.UnitTests.Services
                 Login = login,
                 Password = password
             };
+        }
+
+        private ChangePasswordModel GetFakeChangePasswordModel(string login = UserExistLogin, string oldPassword = "Password", string newPassword = "PasswordNew")
+        {
+            return new ChangePasswordModel
+            {
+                Login = login,
+                OldPassword = oldPassword,
+                NewPassword = newPassword,
+                IsPasswordKeptAsHash = true
+            };
+        }
+
+        private Mock<PasswordWalletContext> GetMockDbContext(IQueryable<User> users)
+        {
+            var usersMock = DbContextMock.CreateDbSetMock(users);
+            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
+            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
+
+            return dbContextMock;
+        }
+
+        private Mock<IMemoryCache> GetMockmemoryCache()
+        {
+            var memoryCacheMock = new Mock<IMemoryCache>();
+            memoryCacheMock.Setup(x => x.CreateEntry(It.IsAny<object>())).Returns(Mock.Of<ICacheEntry>);
+
+            return memoryCacheMock;
         }
     }
 }

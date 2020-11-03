@@ -153,6 +153,11 @@ namespace PocketWallet.Services
         {
             _memoryCache.TryGetValue(memoryCacheKey, out string rememberPasswordHash);
 
+            if(rememberPasswordHash == null)
+            {
+                return;
+            }
+
             _passwordWalletContext.Passwords
                 .Where(w => w.UserId == userId)
                 .ToList()
