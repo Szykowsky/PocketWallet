@@ -45,7 +45,7 @@ namespace PocketWallet.Controllers
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
-                var login = identity.FindFirst("given_name").Value;
+                var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
                 return Ok(await _walletService.GetWalletList(login, cancellationToken));
             }
             return BadRequest();
@@ -57,7 +57,7 @@ namespace PocketWallet.Controllers
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
             {
-                var login = identity.FindFirst("given_name").Value;
+                var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
                 return Ok(await _walletService.GetPassword(id, login, cancellationToken));
             }
             return BadRequest();

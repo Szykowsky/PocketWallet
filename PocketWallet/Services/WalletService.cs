@@ -35,6 +35,14 @@ namespace PocketWallet.Services
             }
 
             _memoryCache.TryGetValue(string.Format("Password for {0}", login), out string passwordHash);
+            if(passwordHash == null)
+            {
+                return new Status
+                {
+                    Success = false,
+                    Messege = "Can't find user"
+                };
+            }
             var password = SymmetricEncryptor.EncryptString(addPasswordModel.Password, passwordHash);
 
             var passwordWallet = new Password
