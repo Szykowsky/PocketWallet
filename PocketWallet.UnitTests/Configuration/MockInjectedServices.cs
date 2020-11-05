@@ -38,5 +38,16 @@ namespace PocketWallet.UnitTests.Configuration
 
             return memoryCacheMock;
         }
+
+        public static Mock<IMemoryCache> GetMockmemoryCache(object expectedValue)
+        {
+            var memoryCacheMock = new Mock<IMemoryCache>();
+            memoryCacheMock
+                .Setup(x => x.TryGetValue(It.IsAny<object>(), out expectedValue))
+                .Returns(true);
+
+            return memoryCacheMock;
+        }
+
     }
 }

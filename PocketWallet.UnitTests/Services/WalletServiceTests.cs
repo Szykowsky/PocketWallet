@@ -21,11 +21,8 @@ namespace PocketWallet.UnitTests.Services
             var users = FakeModelsRepository.GetFakeUsers();
             var dbContextMock = MockInjectedServices.GetMockDbContext(users);
 
-            var memoryCacheMock = new Mock<IMemoryCache>();
             object expectedValue = HashHelper.SHA512("zdRpf^%f65V(0" + "testSALT" + "Password");
-            memoryCacheMock
-                .Setup(x => x.TryGetValue(It.IsAny<object>(), out expectedValue))
-                .Returns(true);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(expectedValue);
 
             var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
             var addPasswordModel = FakeModelsRepository.GetFakeAddNewPasswordModel();
@@ -44,12 +41,7 @@ namespace PocketWallet.UnitTests.Services
             //Arrange
             var users = FakeModelsRepository.GetFakeUsers();
             var dbContextMock = MockInjectedServices.GetMockDbContext(users);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
-            object expectedValue = null;
-            memoryCacheMock
-                .Setup(x => x.TryGetValue(It.IsAny<object>(), out expectedValue))
-                .Returns(true);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(null);
 
             var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
             var addPasswordModel = FakeModelsRepository.GetFakeAddNewPasswordModel();
@@ -68,12 +60,7 @@ namespace PocketWallet.UnitTests.Services
             //Arrange
             var users = FakeModelsRepository.GetFakeUsers();
             var dbContextMock = MockInjectedServices.GetMockDbContext(users);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
-            object expectedValue = null;
-            memoryCacheMock
-                .Setup(x => x.TryGetValue(It.IsAny<object>(), out expectedValue))
-                .Returns(true);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(null);
 
             var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
             var addPasswordModel = FakeModelsRepository.GetFakeAddNewPasswordModel();
@@ -93,12 +80,7 @@ namespace PocketWallet.UnitTests.Services
             var users = FakeModelsRepository.GetFakeUsers();
             var passwords = FakeModelsRepository.GetFakePasswords();
             var dbContextMock = MockInjectedServices.GetMockDbContext(users, passwords);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
-            object expectedValue = null;
-            memoryCacheMock
-                .Setup(x => x.TryGetValue(It.IsAny<object>(), out expectedValue))
-                .Returns(true);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(null);
 
             var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
             var cancellationToken = new CancellationToken();
@@ -117,12 +99,7 @@ namespace PocketWallet.UnitTests.Services
             var users = FakeModelsRepository.GetFakeUsers();
             var passwords = FakeModelsRepository.GetFakePasswords();
             var dbContextMock = MockInjectedServices.GetMockDbContext(users, passwords);
-
-            var memoryCacheMock = new Mock<IMemoryCache>();
-            object expectedValue = null;
-            memoryCacheMock
-                .Setup(x => x.TryGetValue(It.IsAny<object>(), out expectedValue))
-                .Returns(true);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(null);
 
             var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
             var cancellationToken = new CancellationToken();
