@@ -75,7 +75,8 @@ namespace PocketWallet.UnitTests.Configuration
             string login = UserExistLogin, 
             string pasword = "Password", 
             string description = "Description", 
-            string webPage = "webpage.pl", Guid userId = new Guid())
+            string webPage = "webpage.pl", 
+            Guid userId = new Guid())
         {
             return new AddPasswordModel
             {

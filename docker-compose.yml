@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  Full2020-86424:
+    container_name: Full2020-86424
+    image: mcr.microsoft.com/mssql/server
+    environment:
+      SA_PASSWORD: 'Password@12345'
+      ACCEPT_EULA: 'Y'
+    ports:
+      - 1433:1433
+    networks:
+      pocketwallet-bridge:
+        ipv4_address: 10.0.10.3
+  pocketwallet:
+    image: pocketwallet
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '9080:80'
+    environment:
+      - 'ConnectionStrings:PasswordWallet=Server=Full2020-86424,1433;Database=PasswordWallet;User=sa;Password=Password@12345;Trusted_Connection=False;'
+    depends_on:
+      - Full2020-86424
+    networks:
+      pocketwallet-bridge:
+        ipv4_address: 10.0.10.4
+
+networks:
+  pocketwallet-bridge:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.0.10.0/24
