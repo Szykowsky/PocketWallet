@@ -9,7 +9,7 @@ namespace PocketWallet.UnitTests.HashTests
         [InlineData("123124235345", "SuperSecretKey@11")]
         [InlineData("*&&^gshd%%$sad", "SuperSecretKey@11")]
         [InlineData("mnbmvgf%%%vbvbdsd+=", "SuperSecretKey@11")]
-        public void GeneratedEncryptValueIsNotNull(string password, string secretkey)
+        public void GeneratedEncryptValue_IsNotNull(string password, string secretkey)
         {
             var encryptedForm = SymmetricEncryptor.EncryptString(password, secretkey);
             Assert.NotNull(encryptedForm);
@@ -20,7 +20,7 @@ namespace PocketWallet.UnitTests.HashTests
         [InlineData("123124235345", "SuperSecretKey@11")]
         [InlineData("*&&^gshd%%$sad", "SuperSecretKey@11")]
         [InlineData("mnbmvgf%%%vbvbdsd+=", "SuperSecretKey@11")]
-        public void IsDecryptedFormSameAfterDecrypt(string password, string secretkey)
+        public void IsDecryptedFormSameAfterDecrypt_AESHelper(string password, string secretkey)
         {
             var encryptedValue = SymmetricEncryptor.EncryptString(password, secretkey);
             var decryptedValue = SymmetricEncryptor.DecryptToString(encryptedValue, secretkey);

@@ -86,7 +86,9 @@ namespace PocketWallet.UnitTests.Services
             var cancellationToken = new CancellationToken();
 
             //Act
-            var result = await service.GetPassword(new Guid("6a2c050a-29f8-4bcb-8a70-9bccc2d57aad"), FakeModelsRepository.UserExistLogin, cancellationToken);
+            var result = await service.GetPassword(new Guid("6a2c050a-29f8-4bcb-8a70-9bccc2d57aad"), 
+                FakeModelsRepository.UserExistLogin, 
+                cancellationToken);
 
             //Assert
             Assert.False(result.Success);
@@ -106,6 +108,44 @@ namespace PocketWallet.UnitTests.Services
 
             //Act
             var result = await service.GetPassword(new Guid(), FakeModelsRepository.UserExistLogin, cancellationToken);
+
+            //Assert
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task DeletePassword_PasswordNotFound()
+        {
+            //Arrange
+            var users = FakeModelsRepository.GetFakeUsers();
+            var passwords = FakeModelsRepository.GetFakePasswords();
+            var dbContextMock = MockInjectedServices.GetMockDbContext(users, passwords);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(null);
+
+            var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
+            var cancellationToken = new CancellationToken();
+
+            //Act
+            var result = await service.DeletePassword(new Guid("6a2c050a-29f8-4bcb-8a70-9bccc2d57aad"), cancellationToken);
+
+            //Assert
+            Assert.False(result.Success);
+        }
+
+        [Fact]
+        public async Task DeletePassword_Success()
+        {
+            //Arrange
+            var users = FakeModelsRepository.GetFakeUsers();
+            var passwords = FakeModelsRepository.GetFakePasswords();
+            var dbContextMock = MockInjectedServices.GetMockDbContext(users, passwords);
+            var memoryCacheMock = MockInjectedServices.GetMockmemoryCache(null);
+
+            var service = new WalletService(dbContextMock.Object, memoryCacheMock.Object);
+            var cancellationToken = new CancellationToken();
+
+            //Act
+            var result = await service.DeletePassword(new Guid(), cancellationToken);
 
             //Assert
             Assert.False(result.Success);

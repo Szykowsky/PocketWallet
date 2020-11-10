@@ -12,7 +12,7 @@ namespace PocketWallet.UnitTests.HashTests
         [InlineData("123124235345", "SuperSecretKey@11")]
         [InlineData("*&&^gshd%%$sad", "SuperSecretKey@11")]
         [InlineData("mnbmvgf%%%vbvbdsd+=", "SuperSecretKey@11")]
-        public void GenerateHMACSHA512HashIsNotNull(string password, string secretKey)
+        public void GenerateHMACSHA512Hash_IsNotNull(string password, string secretKey)
         {
             var result = HashHelper.HMACSHA512(password, secretKey);
             Assert.NotNull(result);
@@ -22,7 +22,7 @@ namespace PocketWallet.UnitTests.HashTests
         [InlineData("123124235345")]
         [InlineData("*&&^gshd%%$sad")]
         [InlineData("mnbmvgf%%%vbvbdsd+=")]
-        public void GenerateSHA512HashIsNotNull(string password)
+        public void GenerateSHA512Hash_IsNotNull(string password)
         {
             var result = HashHelper.SHA512(password);
             Assert.NotNull(result);
