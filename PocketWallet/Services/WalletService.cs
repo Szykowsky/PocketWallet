@@ -72,7 +72,7 @@ namespace PocketWallet.Services
                 return new Status
                 {
                     Success = false,
-                    Messege = string.Format("Cannot find password with id: {0}", login)
+                    Messege = string.Format("Cannot find password with id: {0}", id)
                 };
             }
 
@@ -83,6 +83,28 @@ namespace PocketWallet.Services
             {
                 Success = true,
                 Messege = password
+            };
+        }
+
+        public async Task<Status> DeletePassword(Guid id, CancellationToken cancellationToken)
+        {
+            var encryptedPassword = await _passwordWalletContext.Passwords.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+            if (encryptedPassword == null)
+            {
+                return new Status
+                {
+                    Success = false,
+                    Messege = string.Format("Cannot find password with id: {0}", id)
+                };
+            }
+
+            _passwordWalletContext.Remove(encryptedPassword);
+            await _passwordWalletContext.SaveChangesAsync();
+
+            return new Status
+            {
+                Success = true,
+                Messege = "Successfully removed password from wallet!"
             };
         }
 

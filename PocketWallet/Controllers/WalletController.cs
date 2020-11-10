@@ -58,9 +58,26 @@ namespace PocketWallet.Controllers
             if (identity != null)
             {
                 var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
-                return Ok(await _walletService.GetPassword(id, login, cancellationToken));
+                var result = await _walletService.GetPassword(id, login, cancellationToken);
+
+                if(!result.Success)
+                {
+                    return BadRequest(result);
+                }
+                return Ok(result);
             }
             return BadRequest();
+        }
+
+        [HttpDelete("password/{id}")]
+        public async Task<IActionResult> DeletePassword([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _walletService.DeletePassword(id, cancellationToken);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
         }
     }
 }
