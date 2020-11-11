@@ -1,7 +1,7 @@
 # PocketWallet
 Password Wallet - backend, ASP .NET CORE 3.1 + Unit tests
 
-If you want to test without download repository make docker-compose.yml file and paste this code. This create an API container with database a get image from my repository on docker hub.
+If you want to test without download repository make docker-compose.yml file and paste this code. This create an API container with database and get image of this app from my repository on docker hub.
 
 version: '3.8'
 ```javascript
