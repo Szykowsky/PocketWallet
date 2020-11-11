@@ -4,7 +4,7 @@ Password Wallet - backend, ASP .NET CORE 3.1 + Unit tests
 If you want to test without download repository make docker-compose.yml file and paste this code. This create an API container with database a get image from my repository on docker hub.
 
 version: '3.8'
-
+```javascript
 services:
   Full2020-86424:
     container_name: Full2020-86424
@@ -35,3 +35,4 @@ networks:
     ipam:
       config:
         - subnet: 10.0.10.0/24
+ ```
