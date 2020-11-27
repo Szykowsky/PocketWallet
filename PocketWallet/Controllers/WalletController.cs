@@ -5,11 +5,13 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PocketWallet.Services;
 using PocketWallet.ViewModels;
+using PocketWallet.Wallet.Queries;
 
 namespace PocketWallet.Controllers
 {
@@ -19,9 +21,11 @@ namespace PocketWallet.Controllers
     public class WalletController : ControllerBase
     {
         private readonly IWalletService _walletService;
-        public WalletController(IWalletService walletService)
+        private readonly IMediator _mediator;
+        public WalletController(IWalletService walletService, IMediator mediator)
         {
             _walletService = walletService;
+            _mediator = mediator;
         }
 
         [HttpPost]
@@ -46,7 +50,11 @@ namespace PocketWallet.Controllers
             if (identity != null)
             {
                 var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
-                return Ok(await _walletService.GetWalletList(login, cancellationToken));
+                var result = await _mediator.Send(new GetWalletList.Query
+                {
+                    Login = login
+                }, cancellationToken);
+                return Ok(result);
             }
             return BadRequest();
         }
@@ -58,7 +66,11 @@ namespace PocketWallet.Controllers
             if (identity != null)
             {
                 var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
-                var result = await _walletService.GetPassword(id, login, cancellationToken);
+                var result = await _mediator.Send(new GetPassword.Query
+                {
+                    Id = id,
+                    Login = login
+                }, cancellationToken);
 
                 if(!result.Success)
                 {

@@ -5,9 +5,11 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PocketWallet.Auth.Queries;
 using PocketWallet.Services;
 using PocketWallet.ViewModels;
 
@@ -18,9 +20,11 @@ namespace PocketWallet.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        public AuthController(IAuthService authService)
+        private readonly IMediator _mediator;
+        public AuthController(IAuthService authService, IMediator mediator)
         {
             _authService = authService;
+            _mediator = mediator;
         }
 
         [HttpPost("signup")]
@@ -80,7 +84,10 @@ namespace PocketWallet.Controllers
             if (identity != null)
             {
                 var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
-                var result = await _authService.GetAuthInfo(login, cancellationToken);
+                var result = await _mediator.Send(new GetAuthInfo.Query
+                {
+                    Login = login
+                }, cancellationToken);
 
                 return Ok(result);
             }

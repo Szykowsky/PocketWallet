@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using FluentValidation.AspNetCore;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -48,6 +50,7 @@ namespace PocketWallet
                     .AllowAnyHeader());
             });
 
+            services.AddMediatR(Assembly.GetExecutingAssembly());
             services.AddControllers()
                 .AddFluentValidation(fv =>
                 {
