@@ -12,5 +12,9 @@ namespace PocketWallet.Data.Models
         public string Login { get; set; }
         public string Salt { get; set; }
         public bool IsPasswordKeptAsHash { get; set; }
+        public DateTime SuccessfulLogin { get; set; }
+        public DateTime UnSuccessfulLogin { get; set; }
+        public int InCorrectLoginCount { get; set; }
+        public DateTime? BlockLoginTo { get; set; }
     }
 }

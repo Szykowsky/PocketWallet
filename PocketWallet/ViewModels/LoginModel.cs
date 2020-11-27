@@ -5,9 +5,8 @@ using System.Threading.Tasks;
 
 namespace PocketWallet.ViewModels
 {
-    public class LoginModel
+    public class LoginModel : BaseAuthModel
     {
-        public string Login { get; set; }
-        public string Password { get; set; }
+        public string IpAddress { get; set; }
     }
 }

@@ -14,5 +14,7 @@ namespace PocketWallet.Services
         Task<Status> Login(LoginModel loginModel, CancellationToken cancellationToken);
         Task<Status> ChangePassword(ChangePasswordModel changePasswordModel, CancellationToken cancellationToken);
         string PreapreHashPassword(string password, string salt, bool isKeptAsHash);
+        Task<AuthInfo> GetAuthInfo(string login, CancellationToken cancellationToken);
+        Task<Status> UnbanIpAddress(string ipAddress, CancellationToken cancellationToken);
     }
 }

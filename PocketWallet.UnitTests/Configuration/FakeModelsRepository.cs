@@ -15,7 +15,11 @@ namespace PocketWallet.UnitTests.Configuration
         public const string UserExistLogin = "Login";
         public const string UserNotExistLogin = "Login1";
 
-        public static IQueryable<User> GetFakeUsers()
+        public static IQueryable<User> GetFakeUsers(
+            int inCorrectLoginCount = 0,
+            DateTime successfulLogin = new DateTime(),
+            DateTime unSuccessfulLogin = new DateTime(),
+            DateTime? blockLoginTo = null)
         {
             var fixture = new Fixture();
             return new List<User>
@@ -24,6 +28,10 @@ namespace PocketWallet.UnitTests.Configuration
                     .With(u => u.Login, UserExistLogin)
                     .With(u => u.PasswordHash, HashHelper.SHA512("zdRpf^%f65V(0" + "testSALT" + "Password" ))
                     .With(u => u.Salt, "testSALT")
+                    .With(u => u.InCorrectLoginCount, inCorrectLoginCount)
+                    .With(u => u.SuccessfulLogin, successfulLogin)
+                    .With(u => u.UnSuccessfulLogin, unSuccessfulLogin)
+                    .With(u => u.BlockLoginTo, blockLoginTo)
                     .Create(),
             }.AsQueryable();
         }
@@ -41,6 +49,23 @@ namespace PocketWallet.UnitTests.Configuration
             }.AsQueryable();
         }
 
+        public static IQueryable<IpAddress> GetFakeIpAddress(
+            string ipAddress = "10.10.10.10",
+            int incorrectSignInCount = 0,
+            bool isPermanentlyBlocked = false
+            )
+        {
+            var fixture = new Fixture();
+            return new List<IpAddress>
+            {
+                fixture.Build<IpAddress>()
+                    .With(u => u.FromIpAddress, ipAddress)
+                    .With(u => u.IncorrectSignInCount, incorrectSignInCount)
+                    .With(u => u.IsPermanentlyBlocked, isPermanentlyBlocked)
+                    .Create(),
+            }.AsQueryable();
+        }
+
         public static RegisterModel GetFakeRegisterModel(string login = UserExistLogin)
         {
             return new RegisterModel
@@ -51,12 +76,13 @@ namespace PocketWallet.UnitTests.Configuration
             };
         }
 
-        public static LoginModel GetFakeLoginModel(string login = UserExistLogin, string password = "Password")
+        public static LoginModel GetFakeLoginModel(string login = UserExistLogin, string password = "Password", string ipAddress = "10.10.10.10")
         {
             return new LoginModel
             {
                 Login = login,
-                Password = password
+                Password = password,
+                IpAddress = ipAddress
             };
         }
 
@@ -85,6 +111,35 @@ namespace PocketWallet.UnitTests.Configuration
                 Description = description,
                 WebPage = webPage,
                 UserId = userId,
+            };
+        }
+
+        public static User GetFakeUser(
+            int inCorrectLoginCount = 0,
+            DateTime successfulLogin = new DateTime(),
+            DateTime unSuccessfulLogin = new DateTime(),
+            DateTime? blockLoginTo = null,
+            Guid userId = new Guid(),
+            string login = UserExistLogin)
+        {
+            return new User
+            {
+                Id = userId,
+                Login = login,
+                InCorrectLoginCount = inCorrectLoginCount,
+                SuccessfulLogin = successfulLogin,
+                UnSuccessfulLogin = unSuccessfulLogin,
+                BlockLoginTo = blockLoginTo
+            };
+        }
+
+        public static IpAddress GetFakeIpAdderess(string ipAddress = "10.10.10.10", int inCorrectLoginCount = 0, bool isBlock = false)
+        {
+            return new IpAddress
+            {
+                FromIpAddress = ipAddress,
+                IncorrectSignInCount = inCorrectLoginCount,
+                IsPermanentlyBlocked = isBlock
             };
         }
     }

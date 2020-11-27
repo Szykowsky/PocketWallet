@@ -21,6 +21,7 @@ namespace PocketWallet.UnitTests.Configuration
             var elementsAsQueryable = elements.AsQueryable();
             var dbSetMock = new Mock<DbSet<T>>();
 
+            dbSetMock.As<IAsyncEnumerable<T>>().Setup(x => x.GetAsyncEnumerator(new CancellationToken())).Returns(new TestAsyncEnumerator<T>(elementsAsQueryable.GetEnumerator()));
             dbSetMock.As<IQueryable<T>>().Setup(m => m.Provider).Returns(new TestAsyncQueryProvider<T>(elementsAsQueryable.Provider));
             dbSetMock.As<IQueryable<T>>().Setup(m => m.Expression).Returns(elementsAsQueryable.Expression);
             dbSetMock.As<IQueryable<T>>().Setup(m => m.ElementType).Returns(elementsAsQueryable.ElementType);
@@ -142,12 +143,12 @@ namespace PocketWallet.UnitTests.Configuration
 
         public ValueTask<bool> MoveNextAsync()
         {
-            throw new NotImplementedException();
+            return new ValueTask<bool>(Task.FromResult(_inner.MoveNext()));
         }
 
         public ValueTask DisposeAsync()
         {
-            throw new NotImplementedException();
+            return new ValueTask(Task.FromResult(_inner));
         }
     }
 }

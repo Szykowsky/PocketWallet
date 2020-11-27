@@ -5,8 +5,9 @@ namespace PocketWallet.Data
 {
     public class PasswordWalletContext : DbContext
     {
-        public virtual  DbSet<User> Users { get; set; }
+        public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Password> Passwords { get; set; }
+        public virtual DbSet<IpAddress> IpAddresses{ get; set; }
 
         public PasswordWalletContext(DbContextOptions<PasswordWalletContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -25,6 +26,11 @@ namespace PocketWallet.Data
                 password.HasKey(t => t.Id);
                 password.Property(t => t.Id).ValueGeneratedOnAdd();
                 password.HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId);
+            });
+
+            modelBuilder.Entity<IpAddress>(ip =>
+            {
+                ip.HasKey(t => t.FromIpAddress);
             });
         }
     }

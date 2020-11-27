@@ -1,12 +1,15 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using FluentValidation.Results;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using PocketWallet.Data;
 using PocketWallet.Data.Models;
 using PocketWallet.Helpers;
+using PocketWallet.Validators;
 using PocketWallet.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -27,13 +30,9 @@ namespace PocketWallet.Services
         public async Task<Status> Register(RegisterModel registerModel, CancellationToken cancellationToken)
         {
             var user = _passwordWalletContext.Users.Any(u => u.Login == registerModel.Login);
-            if(user)
+            if (user)
             {
-                return new Status
-                {
-                    Success = false,
-                    Messege = string.Format("User with login {0} exist", registerModel.Login)
-                };
+                return CreateStatus(false, string.Format("User with login {0} exist", registerModel.Login));
             }
 
             var salt = Guid.NewGuid().ToString();
@@ -50,46 +49,30 @@ namespace PocketWallet.Services
             await _passwordWalletContext.AddAsync(newUser, cancellationToken);
             await _passwordWalletContext.SaveChangesAsync(cancellationToken);
 
-            return new Status { Success = true, Messege="Succesfully sign up" };
+            return CreateStatus(true, "Succesfully sign up");
         }
         public async Task<Status> Login(LoginModel loginModel, CancellationToken cancellationToken)
         {
-            const string errorMessage = "Wrong login or password";
+            var ipAddressStatus = await CheckIpStatus(loginModel.IpAddress, cancellationToken);
+            if (!ipAddressStatus.Success)
+            {
+                return ipAddressStatus;
+            }
+
             var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(u => u.Login == loginModel.Login, cancellationToken);
-
-            if (user == null)
+            var userStatus = await CheckUser(user, loginModel);
+            if (!userStatus.Success)
             {
-                return new Status
-                {
-                    Success = false,
-                    Messege = errorMessage
-                };
+                return userStatus;
             }
 
-            var passwordHash = PreapreHashPassword(loginModel.Password, user.Salt, user.IsPasswordKeptAsHash);
-
-            if (passwordHash != user.PasswordHash)
+            var userPasswordStatus = await CheckUserPassword(user, loginModel);
+            if (!userPasswordStatus.Success)
             {
-                return new Status
-                {
-                    Success = false,
-                    Messege = errorMessage
-                };
+                return userPasswordStatus;
             }
-
-            _memoryCache.GetOrCreate(string.Format("Password for {0}", loginModel.Login), (x) => 
-                { 
-                    x.AbsoluteExpiration = DateTime.UtcNow.AddMinutes(60);
-                    x.Value = passwordHash;
-
-                    return passwordHash;
-                });
-
-            return new Status
-            {
-                Success = true,
-                Messege = TokenHelper.GetToken(user)
-            };
+            await UpdateIncorrectSignInCount(loginModel.IpAddress, user, false, true);
+            return CreateStatus(true, TokenHelper.GetToken(user));
         }
 
         public async Task<Status> ChangePassword(ChangePasswordModel changePasswordModel, CancellationToken cancellationToken)
@@ -97,21 +80,13 @@ namespace PocketWallet.Services
             var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(u => u.Login == changePasswordModel.Login, cancellationToken);
             if (user == null)
             {
-                return new Status
-                {
-                    Success = false,
-                    Messege = string.Format("User with login {0} not exist", changePasswordModel.Login)
-                };
+                return CreateStatus(false, string.Format("User with login {0} not exist", changePasswordModel.Login));
             }
 
-            var passwordHash = PreapreHashPassword(changePasswordModel.OldPassword, user.Salt, user.IsPasswordKeptAsHash);         
-            if(passwordHash != user.PasswordHash)
+            var passwordHash = PreapreHashPassword(changePasswordModel.OldPassword, user.Salt, user.IsPasswordKeptAsHash);
+            if (passwordHash != user.PasswordHash)
             {
-                return new Status
-                {
-                    Success = false,
-                    Messege = "Wrong old password"
-                };
+                return CreateStatus(false, "Wrong old password");
             }
 
             try
@@ -123,37 +98,182 @@ namespace PocketWallet.Services
 
                 await _passwordWalletContext.SaveChangesAsync(cancellationToken);
                 _memoryCache.Set(memoryCacheKey, newPasswordHash, DateTime.Now.AddMinutes(60));
-                
-                return new Status { Success = true, Messege = "Succesfully password change" };
-            } 
-            catch(Exception ex)
-            {
-                return new Status
-                {
-                    Success = false,
-                    Messege = "Somenthing went wrong"
-                };
+
+                return CreateStatus(true, "Succesfully password change");
             }
+            catch
+            {
+                return CreateStatus(false, "Somenthing went wrong");
+            }
+        }
+
+        public async Task<AuthInfo> GetAuthInfo(string login, CancellationToken cancellationToken)
+        {
+            return await _passwordWalletContext.Users
+                .Where(x => x.Login == login)
+                .Select(x => new AuthInfo
+                {
+                    UserLogin = x.Login,
+                    SuccessFulSignIn = x.SuccessfulLogin,
+                    UnSuccessFulSignIn = x.UnSuccessfulLogin
+                }).FirstOrDefaultAsync();
+        }
+
+        public async Task<Status> UnbanIpAddress(string ipAddress, CancellationToken cancellationToken)
+        {
+            var isIpCorrect = IPAddress.TryParse(ipAddress, out IPAddress ip);
+            if (!isIpCorrect)
+            {
+                return CreateStatus(false, "Bad Ip Address");
+            }
+            var ipAddressResult = await GetOrCreateIpAddressAsync(ipAddress, cancellationToken);
+
+            ipAddressResult.IncorrectSignInCount = 0;
+            ipAddressResult.IsPermanentlyBlocked = false;
+
+            await _passwordWalletContext.SaveChangesAsync(cancellationToken);
+
+            return CreateStatus(true, "Successful unban ip address");
         }
 
         public string PreapreHashPassword(string password, string salt, bool isKeptAsHash)
         {
-            var passwordForHash = isKeptAsHash ? 
-                string.Format("{0}{1}{2}", pepper, salt, password) : 
+            var passwordForHash = isKeptAsHash ?
+                string.Format("{0}{1}{2}", pepper, salt, password) :
                 string.Format("{0}{1}", salt, password);
 
-            var passwordHash = isKeptAsHash ? 
-                HashHelper.SHA512(passwordForHash) : 
+            var passwordHash = isKeptAsHash ?
+                HashHelper.SHA512(passwordForHash) :
                 HashHelper.HMACSHA512(passwordForHash, pepper);
 
             return passwordHash;
+        }
+
+
+        private async Task<Status> CheckIpStatus(string ipAddress, CancellationToken cancellationToken)
+        {
+            var isIpCorrect = IPAddress.TryParse(ipAddress, out IPAddress ip);
+            if (!isIpCorrect)
+            {
+                return CreateStatus(false, "Bad Ip Address");
+            }
+            var ipAddressResult = await GetOrCreateIpAddressAsync(ipAddress, cancellationToken);
+            if (ipAddressResult.IsPermanentlyBlocked)
+            {
+                return CreateStatus(false, "Your account is permanently block");
+            }
+            return CreateStatus(true, "");
+        }
+
+        private async Task<Status> CheckUser(User user, LoginModel loginModel)
+        {
+            var loginValidator = new SignInValidator(user);
+            var validatorResult = loginValidator.Validate(loginModel);
+            var isIpAddressError = validatorResult.Errors.Any(e => e.PropertyName == "IpAddress");
+
+            if (!validatorResult.IsValid)
+            {
+                await UpdateIncorrectSignInCount(loginModel.IpAddress, user, isIpAddressError, validatorResult.IsValid);
+                return CreateStatus(validatorResult.IsValid, PrepareErrorMessage(validatorResult));
+            }
+
+            return CreateStatus(true, "");
+        }
+
+        private async Task<Status> CheckUserPassword(User user, LoginModel loginModel)
+        {
+            const string errorMessage = "Wrong login or password";
+            var passwordHash = PreapreHashPassword(loginModel.Password, user.Salt, user.IsPasswordKeptAsHash);
+            if (passwordHash != user.PasswordHash)
+            {
+                await UpdateIncorrectSignInCount(loginModel.IpAddress, user, false, false);
+                return CreateStatus(false, errorMessage);
+            }
+
+            _memoryCache.GetOrCreate(string.Format("Password for {0}", loginModel.Login), (x) =>
+            {
+                x.AbsoluteExpiration = DateTime.UtcNow.AddMinutes(60);
+                x.Value = passwordHash;
+
+                return passwordHash;
+            });
+            return CreateStatus(true, "");
+        }
+
+
+        private async Task<IpAddress> GetOrCreateIpAddressAsync(string ipAddress, CancellationToken cancellationToken, int failCount = 0)
+        {
+            var ipAddressResult = await _passwordWalletContext.IpAddresses
+                .FirstOrDefaultAsync(u => u.FromIpAddress == ipAddress, cancellationToken);
+
+            if (ipAddressResult == null)
+            {
+                return await CreateIpAddress(ipAddress, failCount);
+            }
+
+            return ipAddressResult;
+        }
+
+
+        private async Task UpdateIncorrectSignInCount(string ipAddress, User user, bool isIpAddressError, bool isSuccess)
+        {
+            if (!isIpAddressError)
+            {
+                await UpdateIncorrectIpAddress(ipAddress, isSuccess);
+            }
+
+            if (user != null)
+            {
+                user.InCorrectLoginCount = isSuccess ? 0 : user.InCorrectLoginCount += 1;
+                user.UnSuccessfulLogin = isSuccess ? user.UnSuccessfulLogin : DateTime.Now;
+                user.SuccessfulLogin = isSuccess ? DateTime.Now : user.SuccessfulLogin;
+                user.BlockLoginTo = isSuccess ? user.BlockLoginTo : PrepareBlockDate(user.InCorrectLoginCount);
+
+                await _passwordWalletContext.SaveChangesAsync();
+            }
+        }
+
+        private async Task UpdateIncorrectIpAddress(string ipAddress, bool isResetCounter)
+        {
+            var ipAddressResult = await _passwordWalletContext.IpAddresses
+               .FirstOrDefaultAsync(u => u.FromIpAddress == ipAddress);
+
+            if (ipAddressResult == null)
+            {
+                await CreateIpAddress(ipAddress, 1);
+            }
+            else
+            {
+                ipAddressResult.IncorrectSignInCount = isResetCounter ? 0 : ipAddressResult.IncorrectSignInCount += 1;
+                ipAddressResult.IsPermanentlyBlocked = !isResetCounter && ipAddressResult.IsPermanentlyBlocked;
+
+                if (ipAddressResult.IncorrectSignInCount > 4)
+                {
+                    ipAddressResult.IsPermanentlyBlocked = true;
+                }
+                await _passwordWalletContext.SaveChangesAsync();
+            }
+        }
+
+        private async Task<IpAddress> CreateIpAddress(string ipAddress, int count = 0)
+        {
+            var ipAddressToAdd = new IpAddress
+            {
+                FromIpAddress = ipAddress,
+                IncorrectSignInCount = count,
+                IsPermanentlyBlocked = false
+            };
+
+            await _passwordWalletContext.AddAsync(ipAddressToAdd);
+            await _passwordWalletContext.SaveChangesAsync();
+            return ipAddressToAdd;
         }
 
         private void UpdateUserWallet(string memoryCacheKey, Guid userId, string newPasswordHash)
         {
             _memoryCache.TryGetValue(memoryCacheKey, out string rememberPasswordHash);
 
-            if(rememberPasswordHash == null)
+            if (rememberPasswordHash == null)
             {
                 return;
             }
@@ -180,6 +300,39 @@ namespace PocketWallet.Services
             _passwordWalletContext.Update(user);
 
             return newpasswordHash;
+        }
+
+        private DateTime PrepareBlockDate(int failCount)
+        {
+            if (failCount == 2)
+            {
+                return DateTime.Now.AddSeconds(5);
+            }
+            if (failCount >= 3)
+            {
+                return DateTime.Now.AddSeconds(10);
+            }
+            return DateTime.Now;
+        }
+
+        private Status CreateStatus(bool success, string message)
+        {
+            return new Status
+            {
+                Success = success,
+                Messege = message
+            };
+        }
+
+        private string PrepareErrorMessage(ValidationResult errors)
+        {
+            var result = "";
+            foreach (var failure in errors.Errors)
+            {
+                result = string.Join(", ", failure.ErrorMessage);
+            }
+
+            return result;
         }
     }
 }

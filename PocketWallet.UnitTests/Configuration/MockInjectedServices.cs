@@ -31,6 +31,17 @@ namespace PocketWallet.UnitTests.Configuration
             return dbContextMock;
         }
 
+        public static Mock<PasswordWalletContext> GetMockDbContext(IQueryable<User> users, IQueryable<IpAddress> ipAddress)
+        {
+            var usersMock = DbContextMock.CreateDbSetMock(users);
+            var ipAddressMock = DbContextMock.CreateDbSetMock(ipAddress);
+            var dbContextMock = new Mock<PasswordWalletContext>(DbContextMock.DummyOptions);
+            dbContextMock.Setup(x => x.Users).Returns(usersMock.Object);
+            dbContextMock.Setup(x => x.IpAddresses).Returns(ipAddressMock.Object);
+
+            return dbContextMock;
+        }
+
         public static Mock<IMemoryCache> GetMockmemoryCache()
         {
             var memoryCacheMock = new Mock<IMemoryCache>();
