@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PocketWallet.Data;
 
 namespace PocketWallet.Migrations
 {
     [DbContext(typeof(PasswordWalletContext))]
-    partial class PasswordWalletContextModelSnapshot : ModelSnapshot
+    [Migration("20201127195921_AddSharedPasswords")]
+    partial class AddSharedPasswords
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

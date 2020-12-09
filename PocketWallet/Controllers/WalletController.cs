@@ -39,6 +39,17 @@ namespace PocketWallet.Controllers
             return BadRequest();
         }
 
+        [HttpPost("password/share")]
+        public async Task<IActionResult> SharePassword([FromBody] SharePasswordModel sharePasswordModel, CancellationToken cancellationToken)
+        {
+            var result = await _walletService.SharePassword(sharePasswordModel, HttpContext.User, cancellationToken);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetLoginList(CancellationToken cancellationToken)
         {
@@ -52,7 +63,7 @@ namespace PocketWallet.Controllers
         }
 
         [HttpGet("password/{id}")]
-        public async Task<IActionResult> GetPassword([FromRoute]Guid id, CancellationToken cancellationToken)
+        public async Task<IActionResult> GetPassword([FromRoute] Guid id, CancellationToken cancellationToken)
         {
             var identity = HttpContext.User.Identity as ClaimsIdentity;
             if (identity != null)
@@ -60,7 +71,7 @@ namespace PocketWallet.Controllers
                 var login = identity.FindFirst(JwtRegisteredClaimNames.GivenName).Value;
                 var result = await _walletService.GetPassword(id, login, cancellationToken);
 
-                if(!result.Success)
+                if (!result.Success)
                 {
                     return BadRequest(result);
                 }
@@ -69,10 +80,28 @@ namespace PocketWallet.Controllers
             return BadRequest();
         }
 
+        [HttpGet("full-password/{id}")]
+        public async Task<IActionResult> GetFullSecurityPassword([FromRoute] Guid id, CancellationToken cancellationToken)
+        {
+            var result = await _walletService.GetFullSecurityPassword(id, cancellationToken);
+            return Ok(result);
+        }
+
         [HttpDelete("password/{id}")]
         public async Task<IActionResult> DeletePassword([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var result = await _walletService.DeletePassword(id, cancellationToken);
+            var result = await _walletService.DeletePassword(id, HttpContext.User, cancellationToken);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
+
+        [HttpPut("password")]
+        public async Task<IActionResult> EditPassword([FromBody] PasswordWalletModel passwordWalletModel, CancellationToken cancellationToken)
+        {
+            var result = await _walletService.EditPassword(passwordWalletModel, HttpContext.User, cancellationToken);
             if (result.Success)
             {
                 return Ok(result);
