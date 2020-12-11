@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FluentValidation.AspNetCore;
 using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -21,6 +22,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using PocketWallet.Data;
+using PocketWallet.Policies;
+using PocketWallet.Policies.OnlyOwner;
 using PocketWallet.Services;
 
 namespace PocketWallet
@@ -61,6 +64,13 @@ namespace PocketWallet
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
 
+            services.AddAuthorization(options =>
+            {
+                options.AddPolicy(Policy.OnlyOwner, policy =>
+                    policy.Requirements.Add(new OnlyOwnerRequirement()));
+            });
+            services.AddSingleton<IAuthorizationHandler, OnlyOwnerHandler>();
+
             var key = Encoding.UTF8.GetBytes("SuperSecretKey@345");
             JwtSecurityTokenHandler.DefaultInboundClaimTypeMap.Clear();
             services.AddAuthentication(options =>
@@ -68,7 +78,6 @@ namespace PocketWallet
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-
             })
                 .AddJwtBearer(options =>
                 {

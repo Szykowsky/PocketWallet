@@ -17,5 +17,7 @@ namespace PocketWallet.Data.Models
 
         [ForeignKey("UserId")]
         public virtual User User { get; set; }
+
+        public virtual ICollection<SharedPassword> SharedPasswords { get; set; }
     }
 }

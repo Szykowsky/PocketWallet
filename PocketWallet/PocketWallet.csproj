@@ -9,6 +9,8 @@
   <ItemGroup>
     <Compile Remove="Data\Migrations\20201113181853_AddUserLogins.cs" />
     <Compile Remove="Data\Migrations\20201113181853_AddUserLogins.Designer.cs" />
+    <Compile Remove="Data\Migrations\20201127191838_AddSharedPasswords.cs" />
+    <Compile Remove="Data\Migrations\20201127191838_AddSharedPasswords.Designer.cs" />
   </ItemGroup>
 
   <ItemGroup>
