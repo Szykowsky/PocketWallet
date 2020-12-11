@@ -159,6 +159,11 @@ namespace PocketWallet.Services
                 return new Status(false, "You have to be an owner to edit password");
             }
 
+            if(!string.IsNullOrEmpty(passwordWalletModel.Password))
+            {
+                password.PasswordValue =  SymmetricEncryptor.EncryptString(passwordWalletModel.Password, owner.PasswordHash);
+            }
+
             password.Login = passwordWalletModel.Login;
             password.WebAddress = passwordWalletModel.WebPage;
             password.Description = passwordWalletModel.Description;
