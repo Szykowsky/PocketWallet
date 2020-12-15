@@ -58,6 +58,7 @@ namespace PocketWallet
                 });
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IWalletService, WalletService>();
+            services.AddScoped<ILogsServicecs, LogsService>();
             services.AddMemoryCache();
             services.AddHttpContextAccessor();
 

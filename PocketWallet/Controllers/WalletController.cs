@@ -83,8 +83,16 @@ namespace PocketWallet.Controllers
         [HttpGet("full-password/{id}")]
         public async Task<IActionResult> GetFullSecurityPassword([FromRoute] Guid id, CancellationToken cancellationToken)
         {
-            var result = await _walletService.GetFullSecurityPassword(id, cancellationToken);
-            return Ok(result);
+
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            if (identity != null)
+            {
+                var userId = Guid.Parse(identity.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var result = await _walletService.GetFullSecurityPassword(id, userId, cancellationToken);
+
+                return Ok(result);
+            }
+            return BadRequest();
         }
 
         [HttpDelete("password/{id}")]

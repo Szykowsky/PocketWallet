@@ -9,6 +9,8 @@ namespace PocketWallet.Data
         public virtual DbSet<Password> Passwords { get; set; }
         public virtual DbSet<IpAddress> IpAddresses{ get; set; }
         public virtual DbSet<SharedPassword> SharedPasswords { get; set; }
+        public virtual DbSet<Function> Functions { get; set; }
+        public virtual DbSet<FunctionRun> FunctionRuns { get; set; }
 
         public PasswordWalletContext(DbContextOptions<PasswordWalletContext> options) : base(options) { }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -39,6 +41,22 @@ namespace PocketWallet.Data
                 sp.HasKey(t => new { t.PasswordId, t.UserId });
                 sp.HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId);
                 sp.HasOne(t => t.Password).WithMany().HasForeignKey(t => t.PasswordId);
+            });
+
+            modelBuilder.Entity<Function>(f =>
+            {
+                f.HasKey(t => t.Id);
+                foreach(var function in Function.GetSeedData())
+                {
+                    f.HasData(function);
+                }
+            });
+
+            modelBuilder.Entity<FunctionRun>(fr =>
+            {
+                fr.HasKey(t => t.Id);
+                fr.HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId);
+                fr.HasOne(t => t.Function).WithMany().HasForeignKey(t => t.FunctionId);
             });
         }
     }

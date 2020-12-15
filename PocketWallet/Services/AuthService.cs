@@ -40,11 +40,15 @@ namespace PocketWallet.Services
 
             var newUser = new User
             {
+                Id = Guid.NewGuid(),
                 PasswordHash = passwordHash,
                 Salt = salt,
                 IsPasswordKeptAsHash = registerModel.IsPasswordKeptAsHash,
                 Login = registerModel.Login
             };
+
+            var function= await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.SignUp, cancellationToken);
+            await LogFunction(function.Id, newUser.Id, cancellationToken);
 
             await _passwordWalletContext.AddAsync(newUser, cancellationToken);
             await _passwordWalletContext.SaveChangesAsync(cancellationToken);
@@ -61,6 +65,10 @@ namespace PocketWallet.Services
 
             var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(u => u.Login == loginModel.Login, cancellationToken);
             var userStatus = await CheckUser(user, loginModel);
+
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.SignIn, cancellationToken);
+            await LogFunction(function.Id, user.Id, cancellationToken);
+
             if (!userStatus.Success)
             {
                 return userStatus;
@@ -82,6 +90,9 @@ namespace PocketWallet.Services
             {
                 return CreateStatus(false, string.Format("User with login {0} not exist", changePasswordModel.Login));
             }
+
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.ChangeMasterPassword, cancellationToken);
+            await LogFunction(function.Id, user.Id, cancellationToken);
 
             var passwordHash = PreapreHashPassword(changePasswordModel.OldPassword, user.Salt, user.IsPasswordKeptAsHash);
             if (passwordHash != user.PasswordHash)
@@ -109,6 +120,10 @@ namespace PocketWallet.Services
 
         public async Task<AuthInfo> GetAuthInfo(string login, CancellationToken cancellationToken)
         {
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.GetLoginInfo, cancellationToken);
+            var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(x => x.Login == login);
+            await LogFunction(function.Id, user.Id, cancellationToken);
+
             return await _passwordWalletContext.Users
                 .Where(x => x.Login == login)
                 .Select(x => new AuthInfo
@@ -333,6 +348,19 @@ namespace PocketWallet.Services
             }
 
             return result;
+        }
+
+        private async Task LogFunction(Guid functionId, Guid userId, CancellationToken cancellationToken)
+        {
+            var logSignUp = new FunctionRun
+            {
+                FunctionId = functionId,
+                UserId = userId,
+                DateTime = DateTime.Now,
+            };
+
+            await _passwordWalletContext.AddAsync(logSignUp, cancellationToken);
+            await _passwordWalletContext.SaveChangesAsync(cancellationToken);
         }
     }
 }

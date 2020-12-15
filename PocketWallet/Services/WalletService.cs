@@ -35,6 +35,9 @@ namespace PocketWallet.Services
                 return new Status(false, "User not exist");
             }
 
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.AddPassword, cancellationToken);
+            await LogFunction(function.Id, user.Id, cancellationToken);
+
             _memoryCache.TryGetValue(string.Format("Password for {0}", login), out string passwordHash);
             if (passwordHash == null)
             {
@@ -72,6 +75,9 @@ namespace PocketWallet.Services
             {
                 return new Status(false, "Cannot get password");
             }
+
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.GetPassword, cancellationToken);
+            await LogFunction(function.Id, requestUser.Id, cancellationToken);
 
             var encryptedPassword = await _passwordWalletContext.Passwords.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (encryptedPassword == null)
@@ -111,6 +117,9 @@ namespace PocketWallet.Services
 
         public async Task<Status> DeletePassword(Guid id, ClaimsPrincipal user, CancellationToken cancellationToken)
         {
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.DeletePassword, cancellationToken);
+            await LogFunction(function.Id, Guid.Parse(user.FindFirst(ClaimTypes.NameIdentifier).Value), cancellationToken);
+
             var passwordToRemove = await _passwordWalletContext.Passwords.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
             if (passwordToRemove == null)
             {
@@ -141,6 +150,9 @@ namespace PocketWallet.Services
         {
             var userIdString = user.FindFirst(ClaimTypes.NameIdentifier).Value;
             Guid.TryParse(userIdString, out Guid userId);
+
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.EditPassword, cancellationToken);
+            await LogFunction(function.Id, userId, cancellationToken);
 
             var owner = await _passwordWalletContext.Users
                 .FirstOrDefaultAsync(user => user.Id == userId, cancellationToken);
@@ -175,6 +187,10 @@ namespace PocketWallet.Services
 
         public async Task<IEnumerable<PasswordWalletFlagModel>> GetWalletList(string login, CancellationToken cancellationToken)
         {
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.GetWallet, cancellationToken);
+            var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(x => x.Login == login);
+            await LogFunction(function.Id, user.Id, cancellationToken);
+
             var userPasswords = await _passwordWalletContext.Passwords
                 .Where(x => x.User.Login == login)
                 .Select(x => new PasswordWalletFlagModel
@@ -210,20 +226,26 @@ namespace PocketWallet.Services
             var userIdString = userClaims.FindFirst(ClaimTypes.NameIdentifier).Value;
             Guid.TryParse(userIdString, out Guid userId);
 
+            var function = await _passwordWalletContext.Functions
+                .FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.SharePassword, cancellationToken);
+            await LogFunction(function.Id, userId, cancellationToken);
+
             var user = _passwordWalletContext.Users.FirstOrDefault(user => user.Login == model.Login);
             if (user == null)
             {
                 return new Status(false, string.Format("User: {0} not exist", model.Login));
             }
 
-            var owner = await _passwordWalletContext.Users.FirstOrDefaultAsync(user => user.Id == userId, cancellationToken);
+            var owner = await _passwordWalletContext.Users
+                .FirstOrDefaultAsync(user => user.Id == userId, cancellationToken);
             if (owner == null)
             {
                 return new Status(false, string.Format("User: {0} not exist", userIdString));
             }
 
 
-            var password = await _passwordWalletContext.Passwords.FirstOrDefaultAsync(password => password.Id == model.PasswordId, cancellationToken);
+            var password = await _passwordWalletContext.Passwords
+                .FirstOrDefaultAsync(password => password.Id == model.PasswordId, cancellationToken);
             if (password == null)
             {
                 return new Status(false, "Password not found");
@@ -236,7 +258,8 @@ namespace PocketWallet.Services
                 return new Status(false, "You have to be an owner to share password");
             }
 
-            var isExist = _passwordWalletContext.SharedPasswords.Any(x => x.PasswordId == model.PasswordId && x.UserId == user.Id);
+            var isExist = _passwordWalletContext.SharedPasswords
+                .Any(x => x.PasswordId == model.PasswordId && x.UserId == user.Id);
             if(isExist)
             {
                 return new Status(false, string.Format("You already share this password to user: {0}", user.Login));
@@ -254,8 +277,12 @@ namespace PocketWallet.Services
             return new Status(true, "Successful shared password");
         }
 
-        public async Task<PasswordWalletModel> GetFullSecurityPassword(Guid id, CancellationToken cancellationToken)
+        public async Task<PasswordWalletModel> GetFullSecurityPassword(Guid id, Guid userId, CancellationToken cancellationToken)
         {
+            var function = await _passwordWalletContext.Functions
+                .FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.GetFullSecurityPassword, cancellationToken);
+            await LogFunction(function.Id, userId, cancellationToken);
+
             return await _passwordWalletContext.Passwords
                 .Select(x => new PasswordWalletModel
                 {
@@ -264,6 +291,19 @@ namespace PocketWallet.Services
                     Description = x.Description,
                     WebPage = x.WebAddress
                 }).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);                 
+        }
+
+        private async Task LogFunction(Guid functionId, Guid userId, CancellationToken cancellationToken)
+        {
+            var logSignUp = new FunctionRun
+            {
+                FunctionId = functionId,
+                UserId = userId,
+                DateTime = DateTime.Now,
+            };
+
+            await _passwordWalletContext.AddAsync(logSignUp, cancellationToken);
+            await _passwordWalletContext.SaveChangesAsync(cancellationToken);
         }
     }
 }
