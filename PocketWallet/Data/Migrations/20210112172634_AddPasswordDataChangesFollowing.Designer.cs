@@ -3,15 +3,17 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using PocketWallet.Data;
 
 namespace PocketWallet.Migrations
 {
     [DbContext(typeof(PasswordWalletContext))]
-    partial class PasswordWalletContextModelSnapshot : ModelSnapshot
+    [Migration("20210112172634_AddPasswordDataChangesFollowing")]
+    partial class AddPasswordDataChangesFollowing
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,67 +71,67 @@ namespace PocketWallet.Migrations
                     b.HasData(
                         new
                         {
-                            Id = new Guid("2d204615-99f7-4fe6-ab9e-91a6e73a1293"),
+                            Id = new Guid("37f7030b-ad22-4c52-9773-76422a98e9a1"),
                             Description = "User sign in to application",
                             Name = "SignIn"
                         },
                         new
                         {
-                            Id = new Guid("1624c18a-2eb7-4ba7-b943-f15daee1615a"),
+                            Id = new Guid("9e9c176d-3bbe-4d05-873f-17f230f8227a"),
                             Description = "User create new account in application",
                             Name = "SignUp"
                         },
                         new
                         {
-                            Id = new Guid("418342bf-1543-4cd1-b65f-00de3173949d"),
+                            Id = new Guid("f8c1ae21-dd92-42a0-8ba4-281072d117b0"),
                             Description = "User change his master password",
                             Name = "ChangeMasterPassword"
                         },
                         new
                         {
-                            Id = new Guid("583535d2-3172-4f0c-b76d-3cce607129b3"),
+                            Id = new Guid("4ac20451-b2be-4aae-b94e-702991e26745"),
                             Description = "User gets his sign in information (i.e successful login time)",
                             Name = "GetLoginInfo"
                         },
                         new
                         {
-                            Id = new Guid("06b4b189-04f0-4f41-93f1-9125feb56f3e"),
+                            Id = new Guid("6a67ea1e-de16-4d36-8f93-2d3e784fbd2c"),
                             Description = "User add new password to his wallet",
                             Name = "AddPassword"
                         },
                         new
                         {
-                            Id = new Guid("11740cea-4e46-4e12-b503-b505f8245e29"),
+                            Id = new Guid("9dfb6cf9-1af1-4b40-8c88-eeed792434cc"),
                             Description = "User delete password from his wallet",
                             Name = "DeletePassword"
                         },
                         new
                         {
-                            Id = new Guid("5ab40cbd-4bd2-4107-8a04-a68c58a3fac0"),
+                            Id = new Guid("ed309dfd-6b62-4286-941b-bdfa0d44a558"),
                             Description = "User edit password in his wallet",
                             Name = "EditPassword"
                         },
                         new
                         {
-                            Id = new Guid("26dd9061-a013-41c2-a9b7-b03c4b083c1a"),
+                            Id = new Guid("5e2f9876-d490-48f5-ba25-f76ee53ffe7e"),
                             Description = "Get password record without password value",
                             Name = "GetFullSecurityPassword"
                         },
                         new
                         {
-                            Id = new Guid("d8588a4a-965f-4617-8ec6-ff4ec7caffaa"),
+                            Id = new Guid("b309edf2-8de9-40c6-a7ce-5404248c3de8"),
                             Description = "Get password decrypted value",
                             Name = "GetPassword"
                         },
                         new
                         {
-                            Id = new Guid("f856af0a-3a5c-41d7-a3a7-55f251ffc200"),
+                            Id = new Guid("b961ef2f-0b08-49c7-a9dc-1e1ddbe42bcf"),
                             Description = "Get all wallet",
                             Name = "GetWallet"
                         },
                         new
                         {
-                            Id = new Guid("f03b0030-e102-4fa5-9261-ff2a66786eab"),
+                            Id = new Guid("d4bfbdf7-95de-417b-91a4-778f5cfab321"),
                             Description = "Share password record to other user",
                             Name = "SharePassword"
                         });
@@ -185,9 +187,7 @@ namespace PocketWallet.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
+                        .HasColumnType("bit");
 
                     b.Property<string>("Login")
                         .HasColumnType("nvarchar(max)");

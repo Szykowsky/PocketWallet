@@ -66,13 +66,13 @@ namespace PocketWallet.Services
             var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(u => u.Login == loginModel.Login, cancellationToken);
             var userStatus = await CheckUser(user, loginModel);
 
-            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.SignIn, cancellationToken);
-            await LogFunction(function.Id, user.Id, cancellationToken);
-
             if (!userStatus.Success)
             {
                 return userStatus;
             }
+
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.SignIn, cancellationToken);
+            await LogFunction(function.Id, user.Id, cancellationToken);
 
             var userPasswordStatus = await CheckUserPassword(user, loginModel);
             if (!userPasswordStatus.Success)

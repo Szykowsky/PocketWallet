@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
+using Newtonsoft.Json;
 using PocketWallet.Data;
 using PocketWallet.Data.Models;
 using PocketWallet.Helpers;
@@ -59,6 +60,18 @@ namespace PocketWallet.Services
             };
 
             await _passwordWalletContext.AddAsync(passwordWallet, cancellationToken);
+            await _passwordWalletContext.SaveChangesAsync(cancellationToken);
+            
+            var actionChanges = new DataChange
+            {
+                UserId = user.Id,
+                PreviousValue = null,
+                CurrentValue = JsonConvert.SerializeObject(passwordWallet),
+                ActionType = ActionType.CREATE,
+                RecordId = passwordWallet.Id,
+                UpdatedAt = DateTime.Now,
+            };
+            await _passwordWalletContext.AddAsync(actionChanges, cancellationToken);
             await _passwordWalletContext.SaveChangesAsync(cancellationToken);
 
             return new Status
@@ -133,10 +146,24 @@ namespace PocketWallet.Services
                 return new Status(false, "You have to be an owner to delete password");
             }
 
-            var sharedPasswordsToRemove = await _passwordWalletContext.SharedPasswords.Where(x => x.PasswordId == id).ToListAsync();
+            var userIdString = user.FindFirst(ClaimTypes.NameIdentifier).Value;
+            Guid.TryParse(userIdString, out Guid userId);
 
-            _passwordWalletContext.RemoveRange(sharedPasswordsToRemove);
-            _passwordWalletContext.Remove(passwordToRemove);
+            var actionChanges = new DataChange
+            {
+                UserId = userId,
+                PreviousValue = JsonConvert.SerializeObject(passwordToRemove),
+                CurrentValue = null,
+                ActionType = ActionType.DELETE,
+                RecordId = passwordToRemove.Id,
+                UpdatedAt = DateTime.Now,
+            };
+
+            passwordToRemove.IsDeleted = true;
+            actionChanges.CurrentValue = JsonConvert.SerializeObject(passwordToRemove);
+
+            _passwordWalletContext.Update(passwordToRemove);
+            await _passwordWalletContext.AddAsync(actionChanges, cancellationToken);
             await _passwordWalletContext.SaveChangesAsync();
 
             return new Status
@@ -151,7 +178,8 @@ namespace PocketWallet.Services
             var userIdString = user.FindFirst(ClaimTypes.NameIdentifier).Value;
             Guid.TryParse(userIdString, out Guid userId);
 
-            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.EditPassword, cancellationToken);
+            var function = await _passwordWalletContext.Functions
+                .FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.EditPassword, cancellationToken);
             await LogFunction(function.Id, userId, cancellationToken);
 
             var owner = await _passwordWalletContext.Users
@@ -176,23 +204,38 @@ namespace PocketWallet.Services
                 password.PasswordValue =  SymmetricEncryptor.EncryptString(passwordWalletModel.Password, owner.PasswordHash);
             }
 
+            var actionChanges = new DataChange
+            {
+                UserId = userId,
+                PreviousValue = JsonConvert.SerializeObject(password),
+                CurrentValue = null,
+                ActionType = ActionType.EDIT,
+                RecordId = password.Id,
+                UpdatedAt = DateTime.Now,
+            };
+
             password.Login = passwordWalletModel.Login;
             password.WebAddress = passwordWalletModel.WebPage;
             password.Description = passwordWalletModel.Description;
 
+            actionChanges.CurrentValue = JsonConvert.SerializeObject(password);
+
             _passwordWalletContext.Update(password);
+            await _passwordWalletContext.AddAsync(actionChanges, cancellationToken);
             await _passwordWalletContext.SaveChangesAsync(cancellationToken);
             return new Status(true, "Successful edit password");
         }
 
         public async Task<IEnumerable<PasswordWalletFlagModel>> GetWalletList(string login, CancellationToken cancellationToken)
         {
-            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.GetWallet, cancellationToken);
-            var user = await _passwordWalletContext.Users.FirstOrDefaultAsync(x => x.Login == login);
+            var function = await _passwordWalletContext.Functions
+                .FirstOrDefaultAsync(x => x.Name == FunctionName.Wallet.GetWallet, cancellationToken);
+            var user = await _passwordWalletContext.Users
+                .FirstOrDefaultAsync(x => x.Login == login);
             await LogFunction(function.Id, user.Id, cancellationToken);
 
             var userPasswords = await _passwordWalletContext.Passwords
-                .Where(x => x.User.Login == login)
+                .Where(x => x.User.Login == login && !x.IsDeleted)
                 .Select(x => new PasswordWalletFlagModel
                 {
                     Id = x.Id,
@@ -205,7 +248,9 @@ namespace PocketWallet.Services
                 }).ToListAsync(cancellationToken);
 
             var sharedPasswords = await _passwordWalletContext.SharedPasswords
-                .Where(x => x.User.Login == login)
+                .Include(x => x.Password)
+                .Include(x => x.User)
+                .Where(x => x.User.Login == login && !x.Password.IsDeleted)
                 .Select(x => new PasswordWalletFlagModel
                 {
                     Id = x.Password.Id,
