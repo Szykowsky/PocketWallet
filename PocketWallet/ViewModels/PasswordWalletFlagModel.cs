@@ -10,5 +10,6 @@ namespace PocketWallet.ViewModels
         public bool CanEdit { get; set; }
         public bool CanDelete { get; set; }
         public bool CanShare { get; set; }
+        public bool CanShowActions { get; set; }
     }
 }

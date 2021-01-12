@@ -271,7 +271,8 @@ namespace PocketWallet.Services
                     WebPage = x.WebAddress,
                     CanDelete = true,
                     CanEdit = true,
-                    CanShare = true
+                    CanShare = true,
+                    CanShowActions = true
                 }).ToListAsync(cancellationToken);
 
             var sharedPasswords = await _passwordWalletContext.SharedPasswords
@@ -286,7 +287,8 @@ namespace PocketWallet.Services
                     WebPage = x.Password.WebAddress,
                     CanEdit = false,
                     CanDelete = false,
-                    CanShare = false
+                    CanShare = false,
+                    CanShowActions = false
                 }).ToListAsync(cancellationToken);
 
             return userPasswords.Concat(sharedPasswords)
