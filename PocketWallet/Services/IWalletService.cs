@@ -19,5 +19,6 @@ namespace PocketWallet.Services
         Task<IEnumerable<PasswordWalletFlagModel>> GetWalletList(string login, CancellationToken cancellationToken);
         Task<Status> SharePassword(SharePasswordModel model, ClaimsPrincipal user, CancellationToken cancellationToken);
         Task<PasswordWalletModel> GetFullSecurityPassword(Guid id, Guid userId, CancellationToken cancellationToken);
+        Task<IEnumerable<OperationModel>> GetOperations(Guid passwordId, Guid userId, CancellationToken cancellationToken);
     }
 }

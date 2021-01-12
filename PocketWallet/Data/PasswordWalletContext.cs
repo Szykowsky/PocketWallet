@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using PocketWallet.Data.Models;
+using System;
 
 namespace PocketWallet.Data
 {
@@ -7,7 +8,7 @@ namespace PocketWallet.Data
     {
         public virtual DbSet<User> Users { get; set; }
         public virtual DbSet<Password> Passwords { get; set; }
-        public virtual DbSet<IpAddress> IpAddresses{ get; set; }
+        public virtual DbSet<IpAddress> IpAddresses { get; set; }
         public virtual DbSet<SharedPassword> SharedPasswords { get; set; }
         public virtual DbSet<Function> Functions { get; set; }
         public virtual DbSet<FunctionRun> FunctionRuns { get; set; }
@@ -48,7 +49,7 @@ namespace PocketWallet.Data
             modelBuilder.Entity<Function>(f =>
             {
                 f.HasKey(t => t.Id);
-                foreach(var function in Function.GetSeedData())
+                foreach (var function in Function.GetSeedData())
                 {
                     f.HasData(function);
                 }
@@ -65,6 +66,10 @@ namespace PocketWallet.Data
             {
                 fr.HasKey(t => t.Id);
                 fr.HasOne(t => t.User).WithMany().HasForeignKey(t => t.UserId);
+                fr.Property(x => x.ActionType)
+                    .HasConversion(
+                        v => v.ToString(),
+                        v => (ActionType)Enum.Parse(typeof(ActionType), v));
             });
         }
     }

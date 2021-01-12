@@ -116,5 +116,20 @@ namespace PocketWallet.Controllers
             }
             return BadRequest(result);
         }
+
+        [HttpGet("operation/{passwordId}")]
+        public async Task<IActionResult> GetPasswordOperation([FromRoute] Guid passwordId, CancellationToken cancellationToken)
+        {
+
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            if (identity != null)
+            {
+                var userId = Guid.Parse(identity.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var result = await _walletService.GetOperations(passwordId, userId, cancellationToken);
+
+                return Ok(result);
+            }
+            return BadRequest();
+        }
     }
 }

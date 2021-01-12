@@ -61,12 +61,21 @@ namespace PocketWallet.Services
 
             await _passwordWalletContext.AddAsync(passwordWallet, cancellationToken);
             await _passwordWalletContext.SaveChangesAsync(cancellationToken);
-            
+
             var actionChanges = new DataChange
             {
                 UserId = user.Id,
                 PreviousValue = null,
-                CurrentValue = JsonConvert.SerializeObject(passwordWallet),
+                CurrentValue = JsonConvert.SerializeObject(new Password
+                {
+                    Id = passwordWallet.Id,
+                    IsDeleted = passwordWallet.IsDeleted,
+                    Login = passwordWallet.Login,
+                    Description = passwordWallet.Description,
+                    PasswordValue = passwordWallet.PasswordValue,
+                    UserId = passwordWallet.UserId,
+                    WebAddress = passwordWallet.WebAddress,
+                }),
                 ActionType = ActionType.CREATE,
                 RecordId = passwordWallet.Id,
                 UpdatedAt = DateTime.Now,
@@ -207,7 +216,16 @@ namespace PocketWallet.Services
             var actionChanges = new DataChange
             {
                 UserId = userId,
-                PreviousValue = JsonConvert.SerializeObject(password),
+                PreviousValue = JsonConvert.SerializeObject(new Password
+                {
+                    Id = password.Id,
+                    IsDeleted = password.IsDeleted,
+                    Login = password.Login,
+                    Description = password.Description,
+                    PasswordValue = password.PasswordValue,
+                    UserId = password.UserId,
+                    WebAddress = password.WebAddress,
+                }),
                 CurrentValue = null,
                 ActionType = ActionType.EDIT,
                 RecordId = password.Id,
@@ -218,7 +236,16 @@ namespace PocketWallet.Services
             password.WebAddress = passwordWalletModel.WebPage;
             password.Description = passwordWalletModel.Description;
 
-            actionChanges.CurrentValue = JsonConvert.SerializeObject(password);
+            actionChanges.CurrentValue = JsonConvert.SerializeObject(new Password
+            {
+                Id = password.Id,
+                IsDeleted = password.IsDeleted,
+                Login = password.Login,
+                Description = password.Description,
+                PasswordValue = password.PasswordValue,
+                UserId = password.UserId,
+                WebAddress = password.WebAddress,
+            });
 
             _passwordWalletContext.Update(password);
             await _passwordWalletContext.AddAsync(actionChanges, cancellationToken);
@@ -336,6 +363,22 @@ namespace PocketWallet.Services
                     Description = x.Description,
                     WebPage = x.WebAddress
                 }).FirstOrDefaultAsync(x => x.Id == id, cancellationToken);                 
+        }
+
+        public async Task<IEnumerable<OperationModel>> GetOperations(Guid passwordId, Guid userId, CancellationToken cancellationToken)
+        {
+            var operations = await _passwordWalletContext.DataChanges
+                .Where(x => x.RecordId == passwordId && x.UserId == userId)
+                .Select(x => new OperationModel
+                {
+                    Id = x.Id,
+                    PreviousValue = x.PreviousValue,
+                    CurrentValue = x.CurrentValue,
+                    UpdatedAt = x.UpdatedAt,
+                    ActionType = x.ActionType.ToString()
+                }).ToListAsync();
+
+            return operations;
         }
 
         private async Task LogFunction(Guid functionId, Guid userId, CancellationToken cancellationToken)
