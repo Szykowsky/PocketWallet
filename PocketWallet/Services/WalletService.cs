@@ -420,6 +420,17 @@ namespace PocketWallet.Services
             passwordToRollback.Description = deserializedPassword.Description;
             passwordToRollback.WebAddress = deserializedPassword.WebAddress;
 
+            actionChanges.CurrentValue = JsonConvert.SerializeObject(new Password
+            {
+                Id = passwordToRollback.Id,
+                IsDeleted = passwordToRollback.IsDeleted,
+                Login = passwordToRollback.Login,
+                Description = passwordToRollback.Description,
+                PasswordValue = passwordToRollback.PasswordValue,
+                UserId = passwordToRollback.UserId,
+                WebAddress = passwordToRollback.WebAddress,
+            });
+
             await _passwordWalletContext.AddAsync(actionChanges, cancellationToken);
             _passwordWalletContext.Update(passwordToRollback);
             await _passwordWalletContext.SaveChangesAsync(cancellationToken);

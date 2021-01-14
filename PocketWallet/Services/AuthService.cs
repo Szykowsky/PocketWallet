@@ -47,7 +47,7 @@ namespace PocketWallet.Services
                 Login = registerModel.Login
             };
 
-            var function= await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.SignUp, cancellationToken);
+            var function = await _passwordWalletContext.Functions.FirstOrDefaultAsync(x => x.Name == FunctionName.Auth.SignUp, cancellationToken);
             await LogFunction(function.Id, newUser.Id, cancellationToken);
 
             await _passwordWalletContext.AddAsync(newUser, cancellationToken);
@@ -102,14 +102,16 @@ namespace PocketWallet.Services
 
             try
             {
-                var memoryCacheKey = string.Format("Password for {0}", user.Login);
-
-                var newPasswordHash = UpdateUserPassword(changePasswordModel.NewPassword, changePasswordModel.IsPasswordKeptAsHash, user);
-                UpdateUserWallet(memoryCacheKey, user.Id, newPasswordHash);
-
                 var actionList = await _passwordWalletContext.DataChanges
                     .Where(x => x.UserId == user.Id).ToListAsync();
-                _passwordWalletContext.RemoveRange(actionList);
+                if (actionList.Any())
+                {
+                    _passwordWalletContext.RemoveRange(actionList);
+                }
+
+                var memoryCacheKey = string.Format("Password for {0}", user.Login);
+                var newPasswordHash = UpdateUserPassword(changePasswordModel.NewPassword, changePasswordModel.IsPasswordKeptAsHash, user);
+                UpdateUserWallet(memoryCacheKey, user.Id, newPasswordHash);
 
                 await _passwordWalletContext.SaveChangesAsync(cancellationToken);
                 _memoryCache.Set(memoryCacheKey, newPasswordHash, DateTime.Now.AddMinutes(60));
