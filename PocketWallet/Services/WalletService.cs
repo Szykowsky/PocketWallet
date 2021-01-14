@@ -378,9 +378,53 @@ namespace PocketWallet.Services
                     CurrentValue = x.CurrentValue,
                     UpdatedAt = x.UpdatedAt,
                     ActionType = x.ActionType.ToString()
-                }).ToListAsync();
+                })
+                .OrderByDescending(x => x.UpdatedAt)
+                .ToListAsync();
 
             return operations;
+        }
+
+        public async Task<Status> RollbackPassword(Guid id, CancellationToken cancellationToken)
+        {
+            var dataAction = await _passwordWalletContext.DataChanges
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            var passwordToRollback = await _passwordWalletContext.Passwords
+                .FirstOrDefaultAsync(x => x.Id == dataAction.RecordId, cancellationToken);
+
+            var actionChanges = new DataChange
+            {
+                UserId = passwordToRollback.UserId,
+                PreviousValue = JsonConvert.SerializeObject(new Password
+                {
+                    Id = passwordToRollback.Id,
+                    IsDeleted = passwordToRollback.IsDeleted,
+                    Login = passwordToRollback.Login,
+                    Description = passwordToRollback.Description,
+                    PasswordValue = passwordToRollback.PasswordValue,
+                    UserId = passwordToRollback.UserId,
+                    WebAddress = passwordToRollback.WebAddress,
+                }),
+                CurrentValue = null,
+                ActionType = ActionType.RESTORE,
+                RecordId = passwordToRollback.Id,
+                UpdatedAt = DateTime.Now,
+            };
+
+            var deserializedPassword = JsonConvert.DeserializeObject<Password>(dataAction.CurrentValue);
+
+            passwordToRollback.IsDeleted = deserializedPassword.IsDeleted;
+            passwordToRollback.Login = deserializedPassword.Login;
+            passwordToRollback.PasswordValue = deserializedPassword.PasswordValue;
+            passwordToRollback.Description = deserializedPassword.Description;
+            passwordToRollback.WebAddress = deserializedPassword.WebAddress;
+
+            await _passwordWalletContext.AddAsync(actionChanges, cancellationToken);
+            _passwordWalletContext.Update(passwordToRollback);
+            await _passwordWalletContext.SaveChangesAsync(cancellationToken);
+
+            return new Status(true, "Succesfully restore password");
         }
 
         private async Task LogFunction(Guid functionId, Guid userId, CancellationToken cancellationToken)

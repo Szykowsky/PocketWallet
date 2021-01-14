@@ -107,6 +107,10 @@ namespace PocketWallet.Services
                 var newPasswordHash = UpdateUserPassword(changePasswordModel.NewPassword, changePasswordModel.IsPasswordKeptAsHash, user);
                 UpdateUserWallet(memoryCacheKey, user.Id, newPasswordHash);
 
+                var actionList = await _passwordWalletContext.DataChanges
+                    .Where(x => x.UserId == user.Id).ToListAsync();
+                _passwordWalletContext.RemoveRange(actionList);
+
                 await _passwordWalletContext.SaveChangesAsync(cancellationToken);
                 _memoryCache.Set(memoryCacheKey, newPasswordHash, DateTime.Now.AddMinutes(60));
 

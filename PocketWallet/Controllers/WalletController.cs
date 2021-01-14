@@ -95,6 +95,21 @@ namespace PocketWallet.Controllers
             return BadRequest();
         }
 
+        [HttpGet("operation/{passwordId}")]
+        public async Task<IActionResult> GetPasswordOperation([FromRoute] Guid passwordId, CancellationToken cancellationToken)
+        {
+
+            var identity = HttpContext.User.Identity as ClaimsIdentity;
+            if (identity != null)
+            {
+                var userId = Guid.Parse(identity.FindFirst(ClaimTypes.NameIdentifier).Value);
+                var result = await _walletService.GetOperations(passwordId, userId, cancellationToken);
+
+                return Ok(result);
+            }
+            return BadRequest();
+        }
+
         [HttpDelete("password/{id}")]
         public async Task<IActionResult> DeletePassword([FromRoute] Guid id, CancellationToken cancellationToken)
         {
@@ -117,19 +132,15 @@ namespace PocketWallet.Controllers
             return BadRequest(result);
         }
 
-        [HttpGet("operation/{passwordId}")]
-        public async Task<IActionResult> GetPasswordOperation([FromRoute] Guid passwordId, CancellationToken cancellationToken)
+        [HttpPost("password/restore/{id}")]
+        public async Task<IActionResult> RollbackPassword(Guid id, CancellationToken cancellationToken)
         {
-
-            var identity = HttpContext.User.Identity as ClaimsIdentity;
-            if (identity != null)
+            var result = await _walletService.RollbackPassword(id, cancellationToken);
+            if (result.Success)
             {
-                var userId = Guid.Parse(identity.FindFirst(ClaimTypes.NameIdentifier).Value);
-                var result = await _walletService.GetOperations(passwordId, userId, cancellationToken);
-
                 return Ok(result);
             }
-            return BadRequest();
+            return BadRequest(result);
         }
     }
 }
